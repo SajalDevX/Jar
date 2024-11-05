@@ -3,39 +3,37 @@ package me.mrsajal.jar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.mrsajal.jar.ui.theme.JarTheme
-import me.mrsajal.jar.R
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            JarTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    GoldLockerScreen()
-                }
+            JarTheme  {
+                TopAppBarWithScaffold()
             }
         }
     }
@@ -43,63 +41,107 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoldLockerScreen() {
+fun TopAppBarWithScaffold() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val topAppBarState = scrollBehavior.state
+    var showBalanceSection by remember { mutableStateOf(true) }
+
+    LaunchedEffect(topAppBarState.collapsedFraction) {
+        showBalanceSection = topAppBarState.collapsedFraction < 0.5f
+    }
+
     Scaffold(
-        topBar = { TopBar() }, // Adds the top bar with tabs at the top of the screen
-        content = { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF1D1B41)) // Background color for entire screen
-                    .padding(paddingValues) // Ensures content does not overlap with the top bar
-            ) {
-                EnhancedBalanceSection()
-                Spacer(modifier = Modifier.height(16.dp))
-                TransactionHistory() // Add other components as needed
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            Column {
+                LargeTopAppBar(
+                    title = {
+                        if (topAppBarState.collapsedFraction < 0.3f) {
+                            Text("Top App Bar")
+                        }
+                    },
+                    scrollBehavior = scrollBehavior,
+                    colors = TopAppBarDefaults.largeTopAppBarColors(
+                        containerColor = Color(0xFF1D1B41),
+                        titleContentColor = Color.White
+                    ),
+                    actions = {
+                        if (topAppBarState.collapsedFraction < 0.3f) {
+                            IconButton(onClick = { /* Handle profile icon click */ }) {
+                                Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
+                            }
+                            IconButton(onClick = { /* Handle support icon click */ }) {
+                                Icon(Icons.Default.Close, contentDescription = "Support")
+                            }
+                            IconButton(onClick = { /* Handle notifications icon click */ }) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                            }
+                        }
+                    }
+                )
+
+                // Show the TabRow in the app bar when collapsed
+                if (topAppBarState.collapsedFraction >= 0.3f) {
+                    TabRow(selectedTabIndex = 0, containerColor = Color(0xFF1D1B41)) {
+                        listOf("Gold", "Jar UPI", "Nek", "Loan").forEachIndexed { index, title ->
+                            Tab(
+                                selected = index == 0,
+                                onClick = { /* Handle tab click */ },
+                                text = { Text(title, color = Color.White) }
+                            )
+                        }
+                    }
+                }
             }
         }
-    )
-}
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF1D1B41))
+                .padding(padding)
+        ) {
+            if (showBalanceSection) {
+                item {
+                    EnhancedBalanceSection(visibility = 1f - topAppBarState.collapsedFraction)
+                }
+            }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar() {
-    Column {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF1D1B41),
-                titleContentColor = Color.White
-            ),
-            title = {},
-            actions = {
-                IconButton(onClick = { /* Handle profile icon click */ }) {
-                    Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
-                }
-                IconButton(onClick = { /* Handle support icon click */ }) {
-                    Icon(Icons.Default.Close, contentDescription = "Support")
-                }
-                IconButton(onClick = { /* Handle notifications icon click */ }) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-                }
-            },
-            modifier = Modifier.background(Color(0xFF1D1B41))
-        )
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Today", color = Color.White, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-        // TabRow for navigation
-        TabRow(selectedTabIndex = 0, containerColor = Color(0xFF1D1B41)) {
-            listOf("Gold", "Jar UPI", "Nek", "Loan").forEachIndexed { index, title ->
-                Tab(
-                    selected = index == 0,
-                    onClick = { /* Handle tab click */ },
-                    text = { Text(title, color = Color.White) }
-                )
+            items(30) { index ->
+                val title = "Transaction #$index"
+                val amount = "₹${(20..1000).random()}"
+                val grams = "${(0.004..0.5)} gms"
+                val date = "7:00 PM • Sep ${(1..30).random()}"
+                TransactionItem(title, amount, grams, date)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Yesterday", color = Color.White, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(10) { index ->
+                val title = "Transaction #${index + 30}"
+                val amount = "₹${(20..1000).random()}"
+                val grams = "${(0.004..0.5)} gms"
+                val date = "6:00 PM • Sep ${(1..30).random()}"
+                TransactionItem(title, amount, grams, date)
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 }
 
 @Composable
-fun EnhancedBalanceSection() {
+fun EnhancedBalanceSection(visibility: Float) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,15 +151,15 @@ fun EnhancedBalanceSection() {
                 )
             )
             .padding(16.dp)
+            .alpha(visibility)
     ) {
-        // Net background image covering the balance section
         Image(
-            painter = painterResource(id = R.drawable.net_bg), // Replace with your net background image
+            painter = painterResource(id = R.drawable.net_bg),
             contentDescription = "Net Background",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp) // Adjust height as needed
+                .height(200.dp)
                 .align(Alignment.TopCenter)
         )
 
@@ -128,7 +170,6 @@ fun EnhancedBalanceSection() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Balance details with locker image
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -144,9 +185,8 @@ fun EnhancedBalanceSection() {
                     }
                 }
 
-                // Locker icon on the right
                 Image(
-                    painter = painterResource(id = R.drawable.chest), // Replace with your locker icon image
+                    painter = painterResource(id = R.drawable.chest),
                     contentDescription = "Locker Image",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.size(64.dp)
@@ -155,7 +195,6 @@ fun EnhancedBalanceSection() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Save Button positioned at the bottom of the balance section
             SaveButton()
         }
     }
@@ -175,22 +214,6 @@ fun SaveButton() {
     }
 }
 
-
-@Composable
-fun TransactionHistory() {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp) // Add padding to align with other components
-    ) {
-        Text("Today", color = Color.White, fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        TransactionItem("Manual Buy", "₹20", "0.0045 gms", "7:00 PM • Sep 18")
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Yesterday", color = Color.White, fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        TransactionItem("Manual Buy", "₹649", "0.0045 gms", "7:00 PM • Sep 17")
-    }
-}
-
 @Composable
 fun TransactionItem(title: String, amount: String, grams: String, date: String) {
     Row(
@@ -202,7 +225,7 @@ fun TransactionItem(title: String, amount: String, grams: String, date: String) 
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.AccountCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+            Icon(Icons.Default.Face, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(title, color = Color.White, fontSize = 16.sp)
