@@ -1,12 +1,15 @@
 package me.mrsajal.jar
 
 import android.os.Bundle
+import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -18,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -32,7 +36,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            JarTheme  {
+            JarTheme {
                 TopAppBarWithScaffold()
             }
         }
@@ -57,7 +61,20 @@ fun TopAppBarWithScaffold() {
                 LargeTopAppBar(
                     title = {
                         if (topAppBarState.collapsedFraction < 0.3f) {
-                            Text("Top App Bar")
+                            TabRow(selectedTabIndex = 0, containerColor = Color(0xFF1D1B41)) {
+                                listOf(
+                                    "Gold",
+                                    "Jar UPI",
+                                    "Nek",
+                                    "Loan"
+                                ).forEachIndexed { index, title ->
+                                    Tab(
+                                        selected = index == 0,
+                                        onClick = { /* Handle tab click */ },
+                                        text = { Text(title, color = Color.White) }
+                                    )
+                                }
+                            }
                         }
                     },
                     scrollBehavior = scrollBehavior,
@@ -65,16 +82,76 @@ fun TopAppBarWithScaffold() {
                         containerColor = Color(0xFF1D1B41),
                         titleContentColor = Color.White
                     ),
-                    actions = {
+                    navigationIcon = {
                         if (topAppBarState.collapsedFraction < 0.3f) {
                             IconButton(onClick = { /* Handle profile icon click */ }) {
-                                Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
+                                Icon(
+                                    Icons.Default.AccountCircle,
+                                    contentDescription = "Profile",
+                                    tint = Color.White
+                                )
                             }
-                            IconButton(onClick = { /* Handle support icon click */ }) {
-                                Icon(Icons.Default.Close, contentDescription = "Support")
-                            }
-                            IconButton(onClick = { /* Handle notifications icon click */ }) {
-                                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                        }
+                    },
+                    actions = {
+                        if (topAppBarState.collapsedFraction < 0.3f) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(end = 16.dp)
+                            ) {
+                                // First icon with background
+                                Box(
+                                    modifier = Modifier
+                                        .background(color = Color(0xff241F33), shape = CircleShape)
+                                        .size(40.dp) // Set the size of the circular background
+                                ) {
+                                    IconButton(onClick = { /* Handle rewards click */ }) {
+                                        Image(
+                                            painter = painterResource(R.drawable.headset),
+                                            contentDescription = "Rewards",
+                                            modifier = Modifier.size(24.dp) // Adjust icon size
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp)) // Space between icons
+
+                                Box(
+                                    modifier = Modifier
+                                        .width(78.dp) // Set custom width
+                                        .height(40.dp)
+                                        .background(color = Color(0xff241F33), shape = RoundedCornerShape(20.dp)) // Rounded corners
+                                        .clip(RoundedCornerShape(20.dp)) // Clip to rounded corners
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        IconButton(
+                                            onClick = { /* Handle support click */ },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Image(
+                                                painter = painterResource(R.drawable.rewards),
+                                                contentDescription = "Support",
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = { /* Handle notifications click */ },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Notifications,
+                                                contentDescription = "Notifications",
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
                             }
                         }
                     }
@@ -179,7 +256,12 @@ fun EnhancedBalanceSection(visibility: Float) {
                     Text("24K Gold in Locker", color = Color(0xFFDAA520), fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("0.828gm", fontSize = 28.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            "0.828gm",
+                            fontSize = 28.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("₹ 1200", color = Color(0xFFDAA520), fontSize = 16.sp)
                     }
@@ -225,7 +307,12 @@ fun TransactionItem(title: String, amount: String, grams: String, date: String) 
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Face, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+            Icon(
+                Icons.Default.Face,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(40.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(title, color = Color.White, fontSize = 16.sp)
